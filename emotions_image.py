@@ -58,18 +58,12 @@ try:
             emotion_label_arg = np.argmax(emotion_prediction)
             emotion_text = emotion_labels[emotion_label_arg]
         emotion_array.append(emotion_text)
-    print(emotion_array)
-
-
-    #code below is for fetching the movie list
-
-    set_arr=set(emotion_array)
-    emotion_dict={}
+    print(emotion_array) 
 
     def fetch_movie(movie_genre):
         Url="https://yts.am/api/v2/list_movies.json"
         Params = {"genre":movie_genre,"limit":10}
-        print("Fetching Movie List... Genre = ",movie_genre)
+        print("Fetching Movie List... Genre = ",movie_genre,end="\n\n")
         try:
             response = requests.get(url=Url,params=Params)
             json_data = response.json()
@@ -77,16 +71,29 @@ try:
             return movie_arr
         except:
             return -1
+        
+    def set_genre(emotion_with_maxcnt):
+        if ("angry" in emotion_with_maxcnt
+            or "fear" in emotion_with_maxcnt
+            or "sad" in emotion_with_maxcnt
+            or "surprise" in emotion_with_maxcnt):
+            movie_genre=["Comedy","Fantasy","Romance","Film-Noir"][random.randint(0,3)]
+        else:
+            movie_genre=["Drama","Fantasy","Sci-Fi","Romance",
+                       "Action","Thriller","Mystery",
+                       "Animation","Adventure"][random.randint(0,8)]
+        return movie_genre        
 
+    set_arr=set(emotion_array)
+    emotion_dict={}
     for emotion in set_arr:
-        cnt=0
+        cnt = 0
         for emotion1 in emotion_array:
-            if emotion1==emotion:
+            if emotion1 == emotion:
                 cnt+=1
         emotion_dict[emotion]=cnt
 
     #print(temparr)
-
     max_cnt=max(emotion_dict.values())
 
     emotion_with_maxcnt=[]
@@ -95,31 +102,25 @@ try:
             emotion_with_maxcnt.append(emotion)
     print(emotion_with_maxcnt)
 
-
-        #do something
     #emotion_priority = {"angry" : 2, "fear" : 2, "sad" : 2, "surprise" : 2, "happy" : 1, "neutral" : 0}
-        #for emotion in emotion_with_maxcnt:
-    if ("angry" in emotion_with_maxcnt
-        or "fear" in emotion_with_maxcnt
-        or "sad" in emotion_with_maxcnt
-        or "surprise" in emotion_with_maxcnt):
-        movie_genre=["Comedy","Fantasy","Romance"][random.randint(0,2)]
-    else:
-        movie_genre=["Horror","Crime","Drama","Fantasy","Sci-Fi","Romance",
-                   "Action","Thriller","Mystery",
-                   "Animation","Adventure"][random.randint(0,10)]
-
-    response_movies = fetch_movie(movie_genre)
-    if response_movies != -1:
-        id=1
-        for i in response_movies:
-            print(id,") Movie Name: ","\"",i["title"],"\"","\n","\tUrl: ",i["url"],sep="")
-            id+=1
-    else:
-        print("Couldn't fetch list. Check Internet/VPN Settings or Try again later!!")
-
+    movie_genre = set_genre(emotion_with_maxcnt)
+    getmovie=0
+    while(getmovie!=1):
+        response_movies = fetch_movie(movie_genre)
+        if response_movies != -1:
+            id=1
+            getmovie=1
+            for i in response_movies:
+                print(id,") Movie Name: ","\"",i["title"],"\"","\n","\tUrl: ",i["url"],sep="")
+                id+=1
+        else:
+            print("Couldn't fetch list. Check Internet/VPN Settings or Try again later!!")
+            print("Retry?(y/n)")
+            ch=str(input())
+            if ch=="y" or ch == "Y":
+                pass
+            else:
+                getmovie=1
+                
 except:
-    print("Couldn't Load Assets.")
-
-
-
+    print("Unknown Exception Occurred!")
