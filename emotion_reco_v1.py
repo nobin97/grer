@@ -16,32 +16,34 @@ try:
     from utils.inference import load_detection_model
     from utils.preprocessor import preprocess_input
 
-    cap = cv2.VideoCapture(0)
+    #initialisations...
+    
     emotion_model_path = './models/emotion_model.hdf5'
     emotion_labels = get_labels('fer2013')
-
+    cam_init=0
     emotion_offsets = (20, 40)
 
-    # loading models
+    #loading models and cascade...
     face_cascade = cv2.CascadeClassifier('./models/haarcascade_frontalface_default.xml')
     emotion_classifier = load_model(emotion_model_path)
 
+    #capture images...
     while True:
         cnt=0
+        cap = cv2.VideoCapture(0)
+        cam_img_init=cap.read()
         print("capturing images...")
         while(cnt < 5):
             ret,frame = cap.read()
-            path="./Subject_images/"+str(cnt)+".jpg"
+            path="./Subject_images/subject_img_"+str(cnt)+".jpg"
             cv2.imwrite(path,frame)
             print("Captured",path)
             cnt+=1
             time.sleep(5)
-        #cap.release()
         print("done")
 
-        
-        while True:
-        # getting input model shapes for inference
+        #load captuted images and deduce emotion...
+        while True:    
             try:
                 emotion_target_size = emotion_classifier.input_shape[1:3]
                 dir_list=[]
@@ -85,12 +87,12 @@ try:
                 break
             if emotion_array==[]:
                 print("Couldn't detect any face!! Try adjusting the camera angle / Remove the camera lid...")
-                cam_set=input("Press \"c\" to continue...")
+                cam_set=input("Press any key to continue...")
                 break
             print(emotion_array) 
 
 
-            ########################################################################### 
+            #Set genre & Fetch...
             def fetch_movie(movie_genre):
                 Url="https://yts.am/api/v2/list_movies.json"
                 Params = {"genre":movie_genre,"limit":10}
@@ -146,6 +148,7 @@ try:
                         id+=1
                 else:
                     print("Couldn't fetch list. Check Internet/VPN Settings or Try again later!!")
+                    cap.release()
                     ch=str(input("Retry?(y/n)"))
                     if ch=="y" or ch == "Y":
                         pass
@@ -155,4 +158,4 @@ try:
 except:
     cap.release()
     #print("KeyboardInterrupt/Unknown Exception Occurred!")
-    print("Stopped!!")
+    print("Stopped by User!!")
