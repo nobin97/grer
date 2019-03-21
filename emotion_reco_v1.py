@@ -6,6 +6,7 @@ import requests
 import random
 import numpy as np
 try:
+    print("\nSetting things up. Please wait...\n")
     from keras.models import load_model
     from statistics import mode
     from utils.datasets import get_labels
@@ -17,34 +18,36 @@ try:
     from utils.preprocessor import preprocess_input
 
     #initialisations...
+    cap = cv2.VideoCapture(0)
     emotion_model_path = './models/emotion_model.hdf5'
     emotion_labels = get_labels('fer2013')
     emotion_offsets = (20, 40)
+    emotion_array = []
+    old_emotion = []
 
     #loading models and cascade...
     face_cascade = cv2.CascadeClassifier('./models/haarcascade_frontalface_default.xml')
     emotion_classifier = load_model(emotion_model_path)
 
-    cap = cv2.VideoCapture(0)
-    emotion_array = []
-    old_emotion=[]
-    #capture images...
+    emoreco_start = input("\nReady. Press any key to start...\n")
+    print("Initializing Camera...")
+    
+    #capturing images...
     while True:
         cnt=0
-        #cap = cv2.VideoCapture(0)
-        #time.sleep(2)
         cam_img_init = cap.read()
-        print("capturing images...")
+        time.sleep(2)
+        print("\ncapturing images...")
         while(cnt < 5):
             ret,frame = cap.read()
             path = "./Subject_images/subject_img_" +str(cnt)+ ".jpg"
             cv2.imwrite(path, frame)
             print("Captured", path)
             cnt += 1
-            time.sleep(5)
+            time.sleep(3)
         print("done")
 
-        #load captuted images and deduce emotion...
+        #loading captuted images and deducing emotion...
         while True:    
             try:
                 emotion_target_size = emotion_classifier.input_shape[1:3]
@@ -57,7 +60,6 @@ try:
                         
                 for subject_image_path in dir_list:
                     imagePath = "./Subject_images/" + subject_image_path
-                    #print(imagePath)
                     bgr_image = cv2.imread(imagePath)
                     gray_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY)
                     rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
@@ -88,21 +90,21 @@ try:
                 print("None")
                 break
             if emotion_array == []:
-                print("Couldn't detect any face!! Try adjusting the camera angle / Remove the camera lid...")
+                print("\nCouldn't detect any face!! Try adjusting the camera angle / Remove the camera lid...")
                 cap.release()
                 cam_set = input("Press any key to continue...")
-                print("Restarting...")
+                print("\nRestarting...")
                 cap = cv2.VideoCapture(0)
                 break
-            print(emotion_array)
+            print("\n",emotion_array,sep="")
             
 
 
             #Set genre & Fetch...
             def fetch_movie(movie_genre):
                 Url = "https://yts.am/api/v2/list_movies.json"
-                Params = {"genre":movie_genre,"limit":10}
-                print("Fetching Movie List... Genre = ", movie_genre, end = "\n\n")
+                Params = {"genre":movie_genre,"limit":5}
+                print("\nFetching Movie List... Genre = ", movie_genre, end = "\n")
                 try:
                     response = requests.get(url = Url, params = Params)
                     json_data = response.json()
@@ -132,16 +134,15 @@ try:
                         cnt += 1
                 emotion_dict[emotion] = cnt
 
-            #print(temparr)
             max_cnt = max(emotion_dict.values())
 
             emotion_with_maxcnt = []
             for emotion, count in emotion_dict.items():
                 if count == max_cnt:
                     emotion_with_maxcnt.append(emotion)
-            print(emotion_with_maxcnt)
+            print("\nDeduced Emotion:",emotion_with_maxcnt)
             if emotion_with_maxcnt == old_emotion:
-                print("No change in emotion")
+                print("\n*No change in emotion.*")
                 break
             else:
                 old_emotion = emotion_with_maxcnt
@@ -156,20 +157,23 @@ try:
                     id = 1
                     getmovie = 1
                     for i in response_movies:
-                        print(id,") Movie Name: ", "\"", i["title"], "\"", "\n", "\tUrl: ", i["url"], sep = "")
+                        print(id,") Movie Name: ","\"",i["title"],"\"","\n","\t  Url: ",i["url"],"\nShort Summary: ",i["summary"],"\n",sep="")
                         id += 1
                 else:
-                    print("Couldn't fetch list. Check Internet/VPN Settings or Try again later!!")
+                    print("\nCouldn't fetch list. Check Internet/VPN Settings or Try again later!!")
                     cap.release()
                     ch = str(input("Retry?(y/n)"))
                     if ch == "y" or ch == "Y":
                         pass
                     else:
-                        print("Restarting...")
+                        print("\nRestarting...")
                         cap = cv2.VideoCapture(0)
                         getmovie = 1                
             break
 except:
-    cap.release()
-    #print("KeyboardInterrupt/Unknown Exception Occurred!")
-    print("Stopped by User!!")
+    try:
+        cap.release()
+        print("\nKeyboardInterrupt. Stopped by User!!")
+    except:
+        print("\nKeyboardInterrupt. Stopped by User!!")
+        
