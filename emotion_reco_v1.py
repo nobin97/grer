@@ -49,7 +49,7 @@ try:
             time.sleep(3)
         print("\nDone. Deducing Emotions...")
 
-        #loading captuted images and deducing emotion...
+        #loading captured images and deducing emotion...
         while True:    
             try:
                 emotion_target_size = emotion_classifier.input_shape[1:3]
@@ -101,7 +101,7 @@ try:
                 break
             print("\n",emotion_array, sep="")
             
-            #Set genre & Fetch...
+            #Set genre & Fetch functions...
             def fetch_movie(movie_genre):
                 Url = "https://yts.am/api/v2/list_movies.json"
                 Params = {"genre" : movie_genre, "limit" : 5}
@@ -127,6 +127,7 @@ try:
                                "Animation","Adventure"][random.randint(0,8)]
                 return movie_genre        
 
+            #Getting Emotion with max count (Most probable emotion)
             set_arr = set(emotion_array)
             emotion_dict = {}
             for emotion in set_arr:
@@ -149,7 +150,7 @@ try:
             else:
                 old_emotion = emotion_with_maxcnt
                 
-            #emotion_priority = {"angry" : 2, "fear" : 2, "sad" : 2, "surprise" : 2, "happy" : 1, "neutral" : 0}
+
             movie_genre = set_genre(emotion_with_maxcnt)
             getmovie = 0
             cam_release = 0
