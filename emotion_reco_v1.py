@@ -1,6 +1,5 @@
 import cv2
-import time
-import cv2
+import time  
 import os
 import requests
 import random
@@ -18,34 +17,37 @@ try:
     from utils.preprocessor import preprocess_input
 
     #initialisations...
-    cap = cv2.VideoCapture(0)
     emotion_model_path = './models/emotion_model.hdf5'
     emotion_labels = get_labels('fer2013')
     emotion_offsets = (20, 40)
     emotion_array = []
     old_emotion = []
+    emotion_prev = 0
 
     #loading models and cascade...
     face_cascade = cv2.CascadeClassifier('./models/haarcascade_frontalface_default.xml')
     emotion_classifier = load_model(emotion_model_path)
 
-    emoreco_start = input("\nReady. Press any key to start...\n")
-    print("Initializing Camera...")
+    #emoreco_start = input("\nReady. Press Enter to Start...\n")
+    input("\nReady. Press Enter to Start...")
+    print("\nInitializing Camera...")
+    cap = cv2.VideoCapture(0)
+    print("Done.")
     
     #capturing images...
     while True:
         cnt=0
         cam_img_init = cap.read()
         time.sleep(2)
-        print("\ncapturing images...")
+        print("\nCapturing images...")
         while(cnt < 5):
             ret,frame = cap.read()
-            path = "./Subject_images/subject_img_" +str(cnt)+ ".jpg"
+            path = "./Subject_images/subject_img_" + str(cnt) + ".jpg"
             cv2.imwrite(path, frame)
             print("Captured", path)
             cnt += 1
             time.sleep(3)
-        print("done")
+        print("\nDone. Deducing Emotions...")
 
         #loading captuted images and deducing emotion...
         while True:    
@@ -87,23 +89,22 @@ try:
                     except:
                         continue
             except:
-                print("None")
+                print("\nOops! An Unknown Exception Occured. Resuming...")
+                cap = cv2.VideoCapture(0)
                 break
             if emotion_array == []:
                 print("\nCouldn't detect any face!! Try adjusting the camera angle / Remove the camera lid...")
                 cap.release()
-                cam_set = input("Press any key to continue...")
+                input("Press Enter to continue...")
                 print("\nRestarting...")
                 cap = cv2.VideoCapture(0)
                 break
-            print("\n",emotion_array,sep="")
+            print("\n",emotion_array, sep="")
             
-
-
             #Set genre & Fetch...
             def fetch_movie(movie_genre):
                 Url = "https://yts.am/api/v2/list_movies.json"
-                Params = {"genre":movie_genre,"limit":5}
+                Params = {"genre" : movie_genre, "limit" : 5}
                 print("\nFetching Movie List... Genre = ", movie_genre, end = "\n")
                 try:
                     response = requests.get(url = Url, params = Params)
@@ -117,6 +118,7 @@ try:
                 if ("angry" in emotion_with_maxcnt
                     or "fear" in emotion_with_maxcnt
                     or "sad" in emotion_with_maxcnt
+                    or "disgust" in emotion_with_maxcnt
                     or "surprise" in emotion_with_maxcnt):
                     movie_genre = ["Comedy","Fantasy","Romance","Film-Noir"][random.randint(0,3)]
                 else:
@@ -140,35 +142,40 @@ try:
             for emotion, count in emotion_dict.items():
                 if count == max_cnt:
                     emotion_with_maxcnt.append(emotion)
-            print("\nDeduced Emotion:",emotion_with_maxcnt)
-            if emotion_with_maxcnt == old_emotion:
-                print("\n*No change in emotion.*")
+            print("\nMost Probable Emotion:",emotion_with_maxcnt)
+            if emotion_with_maxcnt == old_emotion and emotion_prev == 0:
+                print("\n*No change in Emotion*")
                 break
             else:
                 old_emotion = emotion_with_maxcnt
                 
-
             #emotion_priority = {"angry" : 2, "fear" : 2, "sad" : 2, "surprise" : 2, "happy" : 1, "neutral" : 0}
             movie_genre = set_genre(emotion_with_maxcnt)
             getmovie = 0
+            cam_release = 0
             while(getmovie != 1):
                 response_movies = fetch_movie(movie_genre)
                 if response_movies != -1:
                     id = 1
                     getmovie = 1
+                    emotion_prev = 0
                     for i in response_movies:
-                        print(id,") Movie Name: ","\"",i["title"],"\"","\n","\t  Url: ",i["url"],"\nShort Summary: ",i["summary"],"\n",sep="")
+                        print(id,") Movie Name: ", "\"", i["title"], "\"", "\n", "\t  Url: ", i["url"], "\nShort Summary: ", i["summary"], "\n", sep="")
                         id += 1
+                        if cam_release == 1:
+                            cap = cv2.VideoCapture(0)                            
                 else:
                     print("\nCouldn't fetch list. Check Internet/VPN Settings or Try again later!!")
                     cap.release()
+                    cam_release = 1
+                    emotion_prev = 1
                     ch = str(input("Retry?(y/n)"))
                     if ch == "y" or ch == "Y":
                         pass
                     else:
                         print("\nRestarting...")
                         cap = cv2.VideoCapture(0)
-                        getmovie = 1                
+                        getmovie = 1
             break
 except:
     try:
