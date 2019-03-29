@@ -28,8 +28,11 @@ try:
     face_cascade = cv2.CascadeClassifier('./models/haarcascade_frontalface_default.xml')
     emotion_classifier = load_model(emotion_model_path)
 
-    #emoreco_start = input("\nReady. Press Enter to Start...\n")
     input("\nReady. Press Enter to Start...")
+    if os.path.exists('./Subject_images') == False:
+        print("Creating Image directory...")
+        os.mkdir('./Subject_images')
+        print("Done.")
     print("\nInitializing Camera...")
     cap = cv2.VideoCapture(0)
     print("Done.")
@@ -42,6 +45,8 @@ try:
         print("\nCapturing images...")
         while(cnt < 5):
             ret,frame = cap.read()
+            if os.path.exists('./Subject_images') == False:
+                os.mkdir('./Subject_images')
             path = "./Subject_images/subject_img_" + str(cnt) + ".jpg"
             cv2.imwrite(path, frame)
             print("Captured", path)
@@ -60,6 +65,10 @@ try:
                     if ".jpg" in dir_item or ".jpeg" in dir_item or ".png" in dir_item:
                         dir_list.append(dir_item)
                         
+                if len(dir_list) < 3:
+                    print("Image Count too low to deduce the most probable emotion...\nRestarting...")
+                    break
+                
                 for subject_image_path in dir_list:
                     imagePath = "./Subject_images/" + subject_image_path
                     bgr_image = cv2.imread(imagePath)
