@@ -1,19 +1,18 @@
 import cv2
 import time  
 import os
+import sys
+import warnings
 import requests
 import random
 import numpy as np
 try:
     print("\nSetting things up. Please wait...\n")
+    print("Special Thanks to YTS YIFY Movies Torrents website for providing with its Movies API.\n")
+    warnings.filterwarnings("ignore")
     from keras.models import load_model
-    from statistics import mode
     from utils.datasets import get_labels
-    from utils.inference import detect_faces
-    from utils.inference import draw_text
-    from utils.inference import draw_bounding_box
     from utils.inference import apply_offsets
-    from utils.inference import load_detection_model
     from utils.preprocessor import preprocess_input
 
     #initialisations...
@@ -23,19 +22,53 @@ try:
     emotion_array = []
     old_emotion = []
     emotion_prev = 0
+    premature_exit = 0
 
     #loading models and cascade...
     face_cascade = cv2.CascadeClassifier('./models/haarcascade_frontalface_default.xml')
     emotion_classifier = load_model(emotion_model_path)
 
-    input("\nReady. Press Enter to Start...")
+    input("\nReady. Press Enter to Start... (Hit ctrl + c to exit anytime!!)")
     if os.path.exists('./Subject_images') == False:
-        print("Creating Image directory...")
+        print("Creating Image directory...", end = "  ")
         os.mkdir('./Subject_images')
         print("Done.")
-    print("\nInitializing Camera...")
+        
+    #Pinging Google to check for network connection...
+    while True:
+        Url = "https://www.google.com"
+        print("\nLooking for a Network Connection...", end = "  ")
+        try:
+            response = requests.get(url = Url)
+            print("Network Connected.")
+            break
+        except:
+            print("No Network Connection.")
+            ch = input("Check Again?(y/n)")
+            if ch == "y" or ch == "Y":
+                pass
+            elif ch == "n" or ch == "N":
+                print("Exiting...")
+                premature_exit = 1
+                sys.exit()
+            else:
+                pass
+
+    #Checking if Camera is available...
+    print("\nInitializing Camera...", end = "  ")
     cap = cv2.VideoCapture(0)
-    print("Done.")
+    if cap is None or not cap.isOpened():
+        print("\nCouldn't connect with Camera. Make sure you have a working webcam!!")
+        premature_exit = 1
+        input("Press Enter to Exit...")
+        sys.exit()
+    elif cap.read() == (False, None):
+        print("\nCamera looks Busy. Close any other application that is using camera and Try again!!")
+        premature_exit = 1
+        input("Press Enter to Exit...")
+        sys.exit()          
+    else:
+        print("Done.")
     
     #capturing images...
     while True:
@@ -90,7 +123,6 @@ try:
                         gray_face = np.expand_dims(gray_face, 0)
                         gray_face = np.expand_dims(gray_face, -1)
                         emotion_prediction = emotion_classifier.predict(gray_face)
-                        #emotion_probability = np.max(emotion_prediction)
                         emotion_label_arg = np.argmax(emotion_prediction)
                         emotion_text = emotion_labels[emotion_label_arg]
                     try:
@@ -112,17 +144,26 @@ try:
             
             #Set genre & Fetch functions...
             def fetch_movie(movie_genre):
+                max_retry = 0
+                movie_found = 0
                 Url = "https://yts.am/api/v2/list_movies.json"
                 Params = {"genre" : movie_genre, "limit" : 5}
                 print("\nFetching Movie List... Genre = ", movie_genre, end = "\n")
-                try:
-                    response = requests.get(url = Url, params = Params)
-                    json_data = response.json()
-                    movie_arr = json_data["data"]["movies"]
-                    return movie_arr
-                except:
+                #Retry 10 times...
+                while max_retry < 10:
+                    try:
+                        response = requests.get(url = Url, params = Params)
+                        json_data = response.json()
+                        movie_arr = json_data["data"]["movies"]
+                        movie_found = 1
+                        return movie_arr
+                        break
+                    except:
+                        max_retry += 1
+                        continue
+                if movie_found == 0:
                     return -1
-                
+                    
             def set_genre(emotion_with_maxcnt):
                 if ("angry" in emotion_with_maxcnt
                     or "fear" in emotion_with_maxcnt
@@ -182,15 +223,18 @@ try:
                     ch = str(input("Retry?(y/n)"))
                     if ch == "y" or ch == "Y":
                         pass
+                    elif ch == "n" or ch == "N":
+                        print("\nExiting...")
+                        premature_exit = 1
+                        sys.exit()
                     else:
-                        print("\nRestarting...")
-                        cap = cv2.VideoCapture(0)
-                        getmovie = 1
+                        pass
             break
 except:
-    try:
-        cap.release()
-        print("\nKeyboardInterrupt. Stopped by User!!")
-    except:
-        print("\nKeyboardInterrupt. Stopped by User!!")
-        
+    if premature_exit != 1:
+        try:
+            cap.release()
+            print("\nKeyboardInterrupt. Stopped by User!!")
+        except:
+            print("\nKeyboardInterrupt. Stopped by User!!")
+            
