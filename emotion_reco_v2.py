@@ -11,7 +11,8 @@ try:
     print("\nSpecial Thanks to YTS YIFY Movies Torrents website for providing with its Movies API.\n")
     premature_exit = 0
     skip_netlookup = 0
-    use_burst_mode = 1    #(1 for yes, 0 for no)
+    imshow = 0
+    use_burst_mode = 0   #(1 for yes, 0 for no)
     warnings.filterwarnings("ignore")
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     from keras.models import load_model
@@ -22,6 +23,7 @@ try:
     #initialisations...
     emotion_model_path = './models/emotion_model.hdf5'
     cam_id = 0
+    rounds = 1
     emotion_labels = get_labels('fer2013')
     emotion_offsets = (20, 40)
     emotion_array = []
@@ -69,6 +71,18 @@ try:
                 else:
                     pass
 
+    ch = input("\nShow capture window?(y/n)")
+    if ch == "n" or ch == "N":
+        pass
+    else:
+        imshow = 1
+    ch = input("\nUse Burst mode?(y/n)")
+    if ch == "n" or ch == "N":
+        pass
+    else:
+        use_burst_mode = 1
+            
+    
     #Checking if Camera is available...
     while True:
         print("\nInitializing Camera...", end = "  ")
@@ -109,7 +123,8 @@ try:
         time.sleep(2)
         dir_list = []
         emotion_array = []
-        print("\nCapturing images...")
+        print("\nRound:",rounds, "| Capturing images...", sep =" ")
+        rounds += 1
         while(cnt < 5):
             ret, frame = cap.read()
             if os.path.exists('./Subject_images') == False:
@@ -118,6 +133,7 @@ try:
             cv2.imwrite(path, frame)    
             print(cnt + 1, ". Captured ", path, sep = "")
             cnt += 1
+            
             try:
                 bgr_image = cv2.imread(path)
                 gray_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2GRAY)
@@ -126,8 +142,12 @@ try:
                 faces = face_cascade.detectMultiScale(gray_image, scaleFactor = 1.1, minNeighbors = 5,
                                         minSize = (30, 30), flags = cv2.CASCADE_SCALE_IMAGE)
                 for (a, b, c, d) in faces:
-                    cv2.rectangle(bgr_image, (a, b), (a+c, b+d), (0, 255, 255), 2)
-
+                    cv2.rectangle(bgr_image, (a, b), (a+c, b+d), (0, 255, 255), 4)
+                if imshow == 1:
+                    cv2.moveWindow('test', 40,30)
+                    cv2.imshow('test', bgr_image)
+                    cv2.waitKey(2)
+                    
                 debug_dir_path = "./img_debug/debug_img_" + str(cnt - 1) + ".jpg"
                 cv2.imwrite(debug_dir_path, bgr_image)
                         
@@ -156,6 +176,7 @@ try:
                     if use_burst_mode != 1:
                         time.sleep(3)
                     continue
+               # cv2.destroyAllWindows()
             except:
                 continue
                 
@@ -259,6 +280,8 @@ except:
     if premature_exit != 1:
         try:
             cap.release()
+            cv2.destroyAllWindows()
             print("\nExecution Stopped by User/SysInterrupt!!")
         except:
+            cv2.destroyAllWindows()
             print("\nExecution Stopped by User/SysInterrupt!!")
