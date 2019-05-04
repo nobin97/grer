@@ -7,7 +7,7 @@ Uses Keras library over tensorflow for emotion reco.
 
 Movie suggestions are made in order to help improve the users mood based on his/her current emotion.
 
-How it Works:-
+How v1 Works:-
   1)takes 5 images of the user through webcam with a 3 second delay in-between.
   2)performs emotion recogition on each image and outputs the emotion as result into an array.
   3)it then finds out the emotion with maximum count(or the Most Probable Emotion).
@@ -15,7 +15,8 @@ How it Works:-
   5)Movie Title, Url and a short summary of the movie is displayed as a result.
   6)Repeats until user interrupts.
   
-  
+How v2 works:-
+  Everything's same except it now predicts the emotion in between the delay used for image capture which decreases the overall time taken     by 1 sec.
   
 Movie API is provided by Yts.am
    https://yts.am/api
