@@ -1,4 +1,4 @@
-# emo_reco
+# GRER
 Gradual Relaxation using Emotion Recognition
 
 This python program provides movie suggestions based on your emotion using emotion-recognition.
